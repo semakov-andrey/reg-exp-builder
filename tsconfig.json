@@ -29,6 +29,9 @@
     "useDefineForClassFields": false,
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true,
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+    "paths": {
+      "@/source/*": [ "./src/*" ]
+    }
   }
 }

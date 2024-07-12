@@ -1,17 +1,17 @@
 import { INITIAL_FLAGS } from "./constants";
-import type { RegExpBuilderFlag, RegExpBuilderOptions } from "./types";
+import type { RegExpBuilderFlag, RegExpBuilderOptions, RegExpParams } from "./types";
 
 export class RegExpBuilder {
-  constructor(options: RegExpBuilderOptions) {
+  constructor(options: RegExpBuilderOptions = {}) {
     this.#options = options;
   }
 
-  #literals: string[] = [];
+  #state: string[] = [];
 
   #options: RegExpBuilderOptions;
 
   public getRegExp = (): RegExp => {
-    const pattern = this.#literals.join('');
+    const pattern = this.#state.join('');
     const flags = INITIAL_FLAGS
       .reduce((acc: string[], { name, enabled, symbol }: RegExpBuilderFlag) => [
         ...acc,
@@ -22,28 +22,54 @@ export class RegExpBuilder {
     return new RegExp(pattern, flags);
   }
 
+  private getQuantity = (params: RegExpParams = { exactly: 1 }): string => {
+    let min = '0';
+    let max = '';
+    if ('min' in params) min = String(params.min);
+    if ('max' in params) max = String(params.max);
+    if ('exactly' in params) min = max = String(params.exactly);
+    return `{${min},${max}}`;
+  }
+
+  public any = (params: RegExpParams): this => {
+    const quantity = this.getQuantity(params);
+    this.#state.push(`(?:.)${quantity}`);
+    return this;
+  }
+
   public digit = (): this => {
-    this.#literals.push('(?:\\d)');
+    this.#state.push('(?:\\d)');
+    return this;
+  }
+
+  public digits = (params: RegExpParams): this => {
+    const quantity = this.getQuantity(params);
+    this.#state.push(`(?:\\d)${quantity}`);
     return this;
   }
 
   public endOfInput = (): this => {
-    this.#literals.push('(?:$)');
+    this.#state.push('(?:$)');
     return this;
   }
 
   public lineBreak = (): this => {
-    this.#literals.push('(?:\\r\\n|\\r|\\n');
+    this.#state.push('(?:\\r\\n|\\r|\\n');
     return this;
   }
 
   public notDigit = (): this => {
-    this.#literals.push('(?:\\D)');
+    this.#state.push('(?:\\D)');
     return this;
   }
 
   public startOfInput = (): this => {
-    this.#literals.push('(?:^)');
+    this.#state.push('(?:^)');
+    return this;
+  }
+
+  public then = (letters: string) => {
+    this.#state.push(`(?:${letters})`);
     return this;
   }
 }
